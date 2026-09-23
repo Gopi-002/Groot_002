@@ -1,0 +1,110 @@
+# Prometheus alert rules for SentinelOps (05 task 3). The in-app notifier evaluates
+# the same conditions deterministically from PostgreSQL (app/notifications/alerts.py);
+# these rules are the EXTERNAL second line - they still fire when the notifier,
+# the API or the whole host is down. Validated with `promtool check rules`.
+groups:
+  - name: sentinelops-availability
+    rules:
+      - alert: SentinelOpsHostOrApiDown
+        expr: up{job="sentinelops"} == 0 or probe_success{job="sentinelops-readiness"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "SentinelOps API unreachable or not ready (host down?)"
+          runbook: "docs/runbook.md#host-or-api-down"
+      - alert: SentinelOpsMonitorSilent
+        expr: sentinel_last_check_age_seconds > 120
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "No health check recorded for {{ $value | humanizeDuration }}"
+          runbook: "docs/runbook.md#alert-monitor-silent"
+      - alert: SentinelOpsServiceHeartbeatStale
+        expr: sentinel_service_heartbeat_age_seconds > 120
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "Service {{ $labels.service }} stopped reporting"
+          runbook: "docs/runbook.md#alert-service-down"
+      - alert: SentinelOpsRedisDown
+        expr: sentinel_redis_up == 0
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: "Redis unreachable: dispatch delayed (PostgreSQL retains all work)"
+          runbook: "docs/runbook.md#redis-unavailable"
+
+  - name: sentinelops-pipeline
+    rules:
+      - alert: SentinelOpsQueueBacklog
+        expr: sentinel_outbox_oldest_unpublished_age_seconds > 120 or sentinel_queue_lag > 10
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "Work is not being dispatched"
+          runbook: "docs/runbook.md#alert-queue-backlog"
+      - alert: SentinelOpsTasksDeadLettered
+        expr: increase(sentinel_tasks_dead_lettered_total[1h]) > 0
+        labels: {severity: critical}
+        annotations:
+          summary: "An incident task was dead-lettered; the incident is escalated"
+          runbook: "docs/runbook.md#dead-lettered-tasks"
+      - alert: SentinelOpsStalledIncident
+        expr: sentinel_alerts_firing{alert="stalled_incident"} == 1
+        labels: {severity: warning}
+        annotations:
+          summary: "An active incident has no task progress"
+          runbook: "docs/runbook.md#alert-stalled-incident"
+      - alert: SentinelOpsLowRecoveryRate
+        expr: sentinel_recovery_rate >= 0 and sentinel_recovery_rate < 0.5 and sentinel_verification_duration_seconds_count >= 4
+        labels: {severity: warning}
+        annotations:
+          summary: "Most restarts are not restoring health - investigate the demo app"
+
+  - name: sentinelops-ai
+    rules:
+      - alert: SentinelOpsAiAuthFailed
+        expr: sentinel_alerts_firing{alert="ai_auth_failed"} == 1 or increase(sentinel_ai_auth_errors_total[15m]) > 0
+        labels: {severity: critical}
+        annotations:
+          summary: "AI authentication failed/expired - AI paused, monitoring continues"
+          runbook: "docs/runbook.md#alert-ai-auth-failed"
+      - alert: SentinelOpsAiPaused
+        expr: sentinel_alerts_firing{alert="ai_paused"} == 1
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "AI processing paused (auth, quota, rate limit or budget)"
+          runbook: "docs/runbook.md#alert-ai-paused"
+      - alert: SentinelOpsAiBudgetExhausted
+        expr: sentinel_alerts_firing{alert="ai_budget_exhausted"} == 1
+        labels: {severity: warning}
+        annotations:
+          summary: "Daily AI budget spent - AI paused until the next UTC day"
+          runbook: "docs/runbook.md#alert-ai-budget-exhausted"
+
+  - name: sentinelops-ops
+    rules:
+      - alert: SentinelOpsBackupFailedOrOverdue
+        expr: sentinel_alerts_firing{alert="backup_failed"} == 1 or sentinel_backup_last_success_age_seconds > 26 * 3600
+        labels: {severity: critical}
+        annotations:
+          summary: "Backup failed or no successful backup in 26 h"
+          runbook: "docs/runbook.md#alert-backup-failed"
+      - alert: SentinelOpsNotificationsFailing
+        expr: increase(sentinel_notifications_dead_lettered_total[1h]) > 0 or sentinel_alerts_firing{alert="notifications_failing"} == 1
+        labels: {severity: warning}
+        annotations:
+          summary: "Notification deliveries are failing or dead-lettered"
+          runbook: "docs/runbook.md#alert-notifications-failing"
+      - alert: SentinelOpsReportFailures
+        expr: sentinel_report_jobs{status="failed"} > 0
+        labels: {severity: warning}
+        annotations:
+          summary: "Incident report generation failed (history is intact)"
+          runbook: "docs/runbook.md#report-failures"
+      - alert: SentinelOpsApiAuthFailures
+        expr: increase(sentinel_api_auth_failures_total[10m]) > 20
+        labels: {severity: warning}
+        annotations:
+          summary: "Many rejected API credentials (probing or a misconfigured client)"

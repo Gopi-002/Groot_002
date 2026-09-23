@@ -1,0 +1,377 @@
+# SentinelOps local development stack. NOT a guaranteed always-on deployment.
+name: sentinelops
+
+# Bounded container logs (retention for potentially sensitive log content).
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "5"}
+
+x-hardened: &hardened
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  init: true
+  logging: *logging
+
+x-py-healthcheck: &py_health
+  interval: 10s
+  timeout: 3s
+  retries: 5
+  start_period: 10s
+
+services:
+  postgres:
+    image: postgres:16.15-alpine
+    restart: unless-stopped
+    command: ["postgres", "-c", "timezone=UTC", "-c", "log_timezone=UTC"]
+    environment:
+      POSTGRES_DB: sentinelops
+      POSTGRES_USER: sentinelops
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinelops -d sentinelops"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits: {cpus: "1.0", memory: 512M}
+
+  redis:
+    image: redis:7.4.11-alpine
+    restart: unless-stopped
+    # Password is passed via env and expanded inside the container so it is not
+    # written into the compose command definition.
+    command: ["sh", "-c", "exec redis-server --appendonly yes --appendfsync everysec --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+    volumes:
+      - redisdata:/data
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits: {cpus: "0.5", memory: 256M}
+
+  migrate:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    environment: &api_env
+      SENTINEL_ENVIRONMENT: ${SENTINEL_ENVIRONMENT:-development}
+      SENTINEL_LOG_LEVEL: ${SENTINEL_LOG_LEVEL:-INFO}
+      SENTINEL_DB_HOST: postgres
+      SENTINEL_DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      SENTINEL_REDIS_HOST: redis
+      SENTINEL_REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+      SENTINEL_DEMO_APP_URL: http://demo-app:8001
+      SENTINEL_API_READ_TOKEN: ${SENTINEL_API_READ_TOKEN:-}
+      # Overridable for accelerated resilience tests; defaults are the Phase 2 contract.
+      SENTINEL_MONITOR_INTERVAL_SECONDS: ${SENTINEL_MONITOR_INTERVAL_SECONDS:-30}
+      SENTINEL_PROBE_TIMEOUT_SECONDS: ${SENTINEL_PROBE_TIMEOUT_SECONDS:-5}
+      SENTINEL_LATENCY_THRESHOLD_SECONDS: ${SENTINEL_LATENCY_THRESHOLD_SECONDS:-2}
+      SENTINEL_REDISPATCH_AFTER_SECONDS: ${SENTINEL_REDISPATCH_AFTER_SECONDS:-300}
+    networks: [backend]
+    depends_on:
+      postgres: {condition: service_healthy}
+    deploy:
+      resources:
+        limits: {cpus: "0.5", memory: 256M}
+
+  api:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    environment:
+      <<: *api_env
+      SENTINEL_APPROVAL_SIGNING_KEY: ${SENTINEL_APPROVAL_SIGNING_KEY:?set SENTINEL_APPROVAL_SIGNING_KEY in .env}
+    ports:
+      - "127.0.0.1:8000:8000"   # localhost only; dashboard shell has no auth yet
+    networks: [backend, demo_net]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=2).status==200 else 1)"]
+    deploy:
+      resources:
+        limits: {cpus: "1.0", memory: 384M}
+
+  monitor:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    command: ["python", "-m", "app.monitoring"]
+    environment: *api_env
+    networks: [backend, demo_net]   # the only agent service that can reach the demo app
+    depends_on:
+      postgres: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-m", "app.healthcheck", "monitor", "75"]
+    deploy:
+      resources:
+        limits: {cpus: "0.5", memory: 256M}
+
+  dispatcher:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    command: ["python", "-m", "app.agent.dispatcher"]
+    environment: *api_env
+    networks: [backend]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-m", "app.healthcheck", "dispatcher", "30"]
+    deploy:
+      resources:
+        limits: {cpus: "0.5", memory: 256M}
+
+  worker:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    command: ["python", "-m", "app.agent.worker"]
+    environment: &worker_env
+      <<: *api_env
+      # anthropic (default, API-key auth) | mock (TEST/DEMO ONLY; forbidden in production)
+      SENTINEL_AI_GATEWAY: ${SENTINEL_AI_GATEWAY:-anthropic}
+      SENTINEL_AI_PAUSE_SECONDS: ${SENTINEL_AI_PAUSE_SECONDS:-300}
+      SENTINEL_OPS_READER_TOKEN: ${SENTINEL_OPS_READER_TOKEN:?set SENTINEL_OPS_READER_TOKEN in .env}
+      # Remediation policy (Phase 4). Autonomy is OFF unless explicitly enabled AND the
+      # environment is declared isolated-demo. Production never executes restarts.
+      SENTINEL_REMEDIATION_AUTO_ENABLED: ${SENTINEL_REMEDIATION_AUTO_ENABLED:-false}
+      SENTINEL_REMEDIATION_ENVIRONMENT: ${SENTINEL_REMEDIATION_ENVIRONMENT:-}
+      SENTINEL_REMEDIATION_APPROVAL_ENABLED: ${SENTINEL_REMEDIATION_APPROVAL_ENABLED:-true}
+      SENTINEL_APPROVAL_TTL_SECONDS: ${SENTINEL_APPROVAL_TTL_SECONDS:-900}
+      SENTINEL_REMEDIATION_MAX_RESTARTS_PER_HOUR: ${SENTINEL_REMEDIATION_MAX_RESTARTS_PER_HOUR:-3}
+      SENTINEL_VERIFY_READINESS_DEADLINE_SECONDS: ${SENTINEL_VERIFY_READINESS_DEADLINE_SECONDS:-120}
+      SENTINEL_EXECUTOR_TOKEN: ${SENTINEL_EXECUTOR_TOKEN:?set SENTINEL_EXECUTOR_TOKEN in .env}
+      SENTINEL_ACTION_SIGNING_KEY: ${SENTINEL_ACTION_SIGNING_KEY:?set SENTINEL_ACTION_SIGNING_KEY in .env}
+      SENTINEL_APPROVAL_SIGNING_KEY: ${SENTINEL_APPROVAL_SIGNING_KEY:?set SENTINEL_APPROVAL_SIGNING_KEY in .env}
+      # Reporting (Phase 5): AI draft + deterministic validation, deterministic fallback.
+      SENTINEL_REPORT_AI_ENABLED: ${SENTINEL_REPORT_AI_ENABLED:-true}
+      # Durable AI budgets (ai_usage ledger) and concurrency. Cost needs operator prices.
+      SENTINEL_AI_DAILY_MAX_TOKENS: ${SENTINEL_AI_DAILY_MAX_TOKENS:-}
+      SENTINEL_AI_INCIDENT_MAX_TOKENS: ${SENTINEL_AI_INCIDENT_MAX_TOKENS:-600000}
+      SENTINEL_AI_MAX_CONCURRENT_JOBS: ${SENTINEL_AI_MAX_CONCURRENT_JOBS:-2}
+      SENTINEL_AI_INPUT_USD_PER_MTOK: ${SENTINEL_AI_INPUT_USD_PER_MTOK:-}
+      SENTINEL_AI_OUTPUT_USD_PER_MTOK: ${SENTINEL_AI_OUTPUT_USD_PER_MTOK:-}
+      SENTINEL_AI_DAILY_MAX_COST_USD: ${SENTINEL_AI_DAILY_MAX_COST_USD:-}
+      # TEST/DEMO ONLY (rejected in production): widens the reporting crash window.
+      SENTINEL_TEST_REPORT_DELAY_SECONDS: ${SENTINEL_TEST_REPORT_DELAY_SECONDS:-0}
+    volumes:
+      - ai_secrets:/var/lib/sentinel-secrets:ro   # API key file; never in env or DB
+    # No path to the demo app and no Docker socket: diagnostics go through ops-reader.
+    # ai_egress is the ONLY internet route in the stack (Anthropic API).
+    networks: [backend, ops_net, exec_net, ai_egress]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    stop_grace_period: 30s
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-m", "app.healthcheck", "worker", "60"]
+    deploy:
+      resources:
+        limits: {cpus: "0.5", memory: 256M}
+
+  notifier:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    command: ["python", "-m", "app.notifications.service"]
+    # Delivers durable notifications and evaluates deterministic alerts. PostgreSQL
+    # only: no Docker socket, no AI key, no executor/signing keys. Its ONLY outbound
+    # destination is the configured, allowlisted webhook (dev default: notify-sink on
+    # the internal notify_net; real providers need docker-compose.notify-egress.yml).
+    environment:
+      <<: *api_env
+      SENTINEL_NOTIFY_CHANNELS: ${SENTINEL_NOTIFY_CHANNELS:-log,webhook}
+      SENTINEL_NOTIFY_WEBHOOK_URL: ${SENTINEL_NOTIFY_WEBHOOK_URL:-http://notify-sink:8004/hook}
+      SENTINEL_NOTIFY_WEBHOOK_ALLOWED_HOSTS: ${SENTINEL_NOTIFY_WEBHOOK_ALLOWED_HOSTS:-notify-sink}
+      SENTINEL_NOTIFY_WEBHOOK_SECRET: ${SENTINEL_NOTIFY_WEBHOOK_SECRET:-}
+      SENTINEL_NOTIFY_MAX_ATTEMPTS: ${SENTINEL_NOTIFY_MAX_ATTEMPTS:-6}
+      SENTINEL_NOTIFY_RETRY_BASE_SECONDS: ${SENTINEL_NOTIFY_RETRY_BASE_SECONDS:-5}
+      SENTINEL_NOTIFY_RETRY_MAX_SECONDS: ${SENTINEL_NOTIFY_RETRY_MAX_SECONDS:-600}
+      SENTINEL_ALERT_EVAL_SECONDS: ${SENTINEL_ALERT_EVAL_SECONDS:-30}
+      SENTINEL_ALERT_MONITOR_SILENCE_SECONDS: ${SENTINEL_ALERT_MONITOR_SILENCE_SECONDS:-120}
+      SENTINEL_AI_DAILY_MAX_TOKENS: ${SENTINEL_AI_DAILY_MAX_TOKENS:-}
+      SENTINEL_BACKUP_MAX_AGE_HOURS: ${SENTINEL_BACKUP_MAX_AGE_HOURS:-}
+    networks: [backend, notify_net]
+    depends_on:
+      postgres: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-m", "app.healthcheck", "notifier", "60"]
+    deploy:
+      resources:
+        limits: {cpus: "0.25", memory: 192M}
+
+  # DEV/TEST ONLY webhook receiver (the "configured test channel"). Internal network,
+  # no published port, no egress. Remove it (and point the notifier at a real HTTPS
+  # webhook) on any real deployment.
+  notify-sink:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    command: ["uvicorn", "--factory", "demo_application.notify_sink:app_factory", "--host", "0.0.0.0", "--port", "8004"]
+    environment:
+      SINK_SECRET: ${SENTINEL_NOTIFY_WEBHOOK_SECRET:-}
+    networks: [notify_net]
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8004/health', timeout=2).status==200 else 1)"]
+    deploy:
+      resources:
+        limits: {cpus: "0.25", memory: 128M}
+
+  ops-reader:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    command: ["uvicorn", "--factory", "app.ops_reader.main:app_factory", "--host", "0.0.0.0", "--port", "8002"]
+    # The ONLY service with Docker access: GET-only inspect/logs/stats of the one
+    # labelled demo-app container. Group access to the socket is root-equivalent
+    # on the host, so this service has no egress, no published port, token auth,
+    # and exposes no generic Docker API.
+    group_add: ["${DOCKER_GID:?set DOCKER_GID in .env (stat -c %g /var/run/docker.sock)}"]
+    environment:
+      OPS_TOKEN: ${SENTINEL_OPS_READER_TOKEN:?set SENTINEL_OPS_READER_TOKEN in .env}
+      OPS_TARGET_PROJECT: sentinelops
+      OPS_TARGET_SERVICE: demo-app
+      OPS_TARGET_METRICS_URL: http://demo-app:8001/metrics
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [ops_net, demo_net]
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8002/health/live', timeout=2).status==200 else 1)"]
+    deploy:
+      resources:
+        limits: {cpus: "0.25", memory: 128M}
+
+  executor:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    command: ["uvicorn", "--factory", "app.executor.main:app_factory", "--host", "0.0.0.0", "--port", "8003"]
+    # The ONLY state-changing component: restarts the one labelled demo-app
+    # container, for signed, action-bound, unexpired requests from the worker.
+    # Docker-socket group access is root-equivalent on the host; this service is
+    # reachable only on the internal exec_net and has NO network egress at all.
+    group_add: ["${DOCKER_GID:?set DOCKER_GID in .env (stat -c %g /var/run/docker.sock)}"]
+    environment:
+      EXEC_TOKEN: ${SENTINEL_EXECUTOR_TOKEN:?set SENTINEL_EXECUTOR_TOKEN in .env}
+      EXEC_SIGNING_KEY: ${SENTINEL_ACTION_SIGNING_KEY:?set SENTINEL_ACTION_SIGNING_KEY in .env}
+      EXEC_ENVIRONMENT: ${SENTINEL_ENVIRONMENT:-development}
+      EXEC_TARGET_PROJECT: sentinelops
+      EXEC_TARGET_SERVICE: demo-app
+      EXEC_MAX_RESTARTS_PER_HOUR: ${EXEC_MAX_RESTARTS_PER_HOUR:-3}
+      EXEC_TEST_PRE_RESTART_DELAY_SECONDS: ${EXEC_TEST_PRE_RESTART_DELAY_SECONDS:-0}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - executor_state:/var/lib/sentinel-executor   # durable action ledger (SQLite)
+    networks: [exec_net]
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8003/health/live', timeout=2).status==200 else 1)"]
+    deploy:
+      resources:
+        limits: {cpus: "0.25", memory: 128M}
+
+  # One-off operator tool: docker compose run --rm onboard [status|change-model|set-key|remove-key]
+  onboard:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    profiles: ["tools"]
+    entrypoint: ["python", "-m", "app.cli"]
+    command: ["onboard"]
+    stdin_open: true
+    tty: true
+    restart: "no"
+    environment:
+      <<: *api_env
+      SENTINEL_AI_GATEWAY: ${SENTINEL_AI_GATEWAY:-anthropic}
+    volumes:
+      - ai_secrets:/var/lib/sentinel-secrets:rw
+    networks: [backend, ai_egress]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  demo-app:
+    <<: *hardened
+    build: .
+    image: sentinelops:dev
+    restart: unless-stopped
+    command: ["uvicorn", "--factory", "demo_application.main:app_factory", "--host", "0.0.0.0", "--port", "8001"]
+    # Deliberately NO database or Redis credentials and not on the backend network.
+    environment:
+      DEMO_ENV: ${DEMO_ENV:-demo}
+      DEMO_FAILURE_INJECTION_ENABLED: ${DEMO_FAILURE_INJECTION_ENABLED:-true}
+      DEMO_INJECTION_TOKEN: ${DEMO_INJECTION_TOKEN:?set DEMO_INJECTION_TOKEN in .env}
+      DEMO_STATE_DIR: /var/lib/demo-state   # demo-only sticky failure (survives restarts)
+    volumes:
+      - demo_state:/var/lib/demo-state
+    ports:
+      - "127.0.0.1:8001:8001"
+    networks: [demo_net]
+    healthcheck:
+      <<: *py_health
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/metrics', timeout=2).status==200 else 1)"]
+    deploy:
+      resources:
+        limits: {cpus: "0.5", memory: 256M}
+
+networks:
+  backend:
+    internal: true       # no egress, no port publishing; DB/Redis unreachable from demo app
+  demo_net: {}
+  ops_net:
+    internal: true       # worker <-> ops-reader only
+  exec_net:
+    internal: true       # worker <-> executor only; executor has no other network
+  notify_net:
+    internal: true       # notifier <-> dev/test webhook sink only (no egress)
+  ai_egress:             # worker/onboard -> Anthropic API (only internet route)
+    driver_opts:
+      com.docker.network.bridge.name: sentinel-egress   # stable name for host firewall rules
+
+volumes:
+  pgdata:
+  redisdata:
+  executor_state:        # executor's durable action ledger
+  demo_state:            # demo-only sticky failure state
+  ai_secrets:            # API key file (0600, uid 10001); back up/rotate via 'onboard set-key'

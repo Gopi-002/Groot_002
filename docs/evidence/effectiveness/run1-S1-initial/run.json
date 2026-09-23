@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "started_at": "2026-09-23T13:29:10.356745+00:00",
+    "model": "mock-investigator-v1 (deterministic TEST/DEMO model - NOT Claude)",
+    "active_model_config": [
+      {
+        "model_id": "mock-investigator-v1",
+        "auth_mode": "mock"
+      }
+    ],
+    "worker_config": {
+      "SENTINEL_AI_GATEWAY": "mock",
+      "SENTINEL_REMEDIATION_AUTO_ENABLED": "true",
+      "SENTINEL_VERIFY_READINESS_DEADLINE_SECONDS": "120",
+      "SENTINEL_ENVIRONMENT": "development",
+      "SENTINEL_REMEDIATION_ENVIRONMENT": "isolated-demo",
+      "SENTINEL_REMEDIATION_APPROVAL_ENABLED": "true"
+    },
+    "worker_env_digest_before": "c8d93699b3a7537876c28f1f9440b28a32191afd7cb23c789b127d903b8769d0",
+    "errors": [],
+    "finished_at": "2026-09-23T13:30:18.667664+00:00",
+    "independent_probe_total": {
+      "probes": 69,
+      "codes": {
+        "200": 54,
+        "500": 13,
+        "ConnectionResetError": 2
+      }
+    },
+    "cleanup": null
+  },
+  "summary": {
+    "S1_recoverable_http500": {
+      "C1.1 incident detected (http_error) within 60 s, exactly one": "PASS",
+      "C1.2 investigation completed with read-only tools returning evidence ids": "PASS",
+      "C1.3 proposal = restart_demo_app on demo-app citing evidence": "PASS",
+      "C1.4 policy ALLOW at proposal and pre_execution (AUT-1)": "PASS",
+      "C1.5 exactly one restart (1 attempt, ledger +1, StartedAt changed)": "PASS",
+      "C1.6 deterministic verification passed": "PASS",
+      "C1.7 final state incident resolved/remediated, task recovery_verified": "PASS",
+      "C1.8 independent probe: failing before action, 5 consecutive healthy after": "PASS",
+      "C1.9 report exists and is consistent with records": "FAIL",
+      "C1.10 no second restart in the 25 s after completion": "PASS"
+    }
+  }
+}

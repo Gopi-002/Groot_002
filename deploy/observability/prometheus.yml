@@ -1,0 +1,30 @@
+# Example Prometheus configuration for a SentinelOps VM (NOT started by the local
+# compose file). Run Prometheus OFF the SentinelOps host when possible: an
+# in-host Prometheus cannot tell you the host is down. The external uptime check
+# (docs/deployment.md) remains required for host failure.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: sentinelops
+    metrics_path: /v1/metrics
+    scheme: https                      # behind the TLS reverse proxy (docs/deployment.md)
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/sentinelops_read_token   # SENTINEL_API_READ_TOKEN, 0600
+    static_configs:
+      - targets: ["sentinelops.example.internal:443"]
+  - job_name: sentinelops-readiness     # probes /health/ready via blackbox_exporter
+    metrics_path: /probe
+    params: {module: [http_2xx]}
+    static_configs:
+      - targets: ["https://sentinelops.example.internal/health/ready"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'self'; form-action 'none'; frame-ancestors 'none'">
+<meta name="referrer" content="no-referrer">
+<title>SentinelOps Dashboard (dev)</title>
+<style>
+  :root { --fg: #111; --bg: #fff; --muted: #666; --line: #ddd; --bad: #b00020; --ok: #1b7f3a; --warn: #9a6700; }
+  @media (prefers-color-scheme: dark) { :root { --fg: #eee; --bg: #151515; --muted: #aaa; --line: #333; } }
+  body { font-family: system-ui, sans-serif; margin: 0 auto; max-width: 960px; padding: 16px; color: var(--fg); background: var(--bg); }
+  .banner { background: var(--bad); color: #fff; padding: 12px; border-radius: 6px; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 6px 4px; vertical-align: top; }
+  code, pre { background: rgba(127,127,127,.15); padding: 1px 4px; }
+  pre { white-space: pre-wrap; padding: 8px; max-height: 480px; overflow: auto; }
+  .ok { color: var(--ok); } .degraded, .unavailable { color: var(--bad); } .muted { color: var(--muted); }
+  input { width: 100%; max-width: 420px; padding: 6px; }
+  button { padding: 6px 10px; }
+</style>
+</head>
+<body>
+  <div class="banner">NOT PRODUCTION-READY - development dashboard, read-only. Served on
+    127.0.0.1 only and never in production. It shows data only from the authenticated /v1 API; it has no approval,
+    remediation or administration controls.</div>
+  <h1>SentinelOps</h1>
+  <p>API readiness: <strong id="ready">checking…</strong></p>
+  <form id="auth">
+    <label for="token">Read token (kept in memory for this tab only; never stored):</label><br>
+    <input id="token" type="password" autocomplete="off" spellcheck="false">
+    <button type="submit">Load</button>
+  </form>
+  <p id="error" class="degraded"></p>
+  <section id="data" hidden>
+    <h2>System status: <span id="overall"></span></h2>
+    <p id="modes" class="muted"></p>
+    <table><thead><tr><th>Component</th><th>Status</th><th>Details</th></tr></thead><tbody id="components"></tbody></table>
+    <h2>Recent incidents</h2>
+    <table><thead><tr><th>Opened</th><th>Type</th><th>Status</th><th>Resolution</th><th>Report</th></tr></thead><tbody id="incidents"></tbody></table>
+    <h2 id="report-title" hidden>Report</h2>
+    <pre id="report" hidden></pre>
+  </section>
+  <script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+[project]
+name = "sentinelops"
+version = "0.1.0"
+description = "Bounded incident-response agent for one isolated FastAPI demo application"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.4",
+    "sqlalchemy>=2.0.30",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.2",
+    "redis>=5.0",
+    "httpx>=0.27",
+    "anthropic>=1.8,<2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC", "RUF"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106", "S310", "S311", "S603", "S607", "S608"]
+"migrations/versions/**" = ["E501", "S608"]
+# operator harness: fixed SQL against the local stack via psql, local HTTP only
+"scripts/soak.py" = ["S310", "S603", "S607", "S608", "E501"]
+"scripts/agent_effectiveness.py" = ["S310", "S603", "S607", "S608", "E501"]
+# imports shared pytest fixtures from test_remediation (fixture args shadow the imports)
+"tests/integration/test_approval_api.py" = ["S105", "S106", "S310", "S603", "S607", "S608", "F811"]
+"tests/integration/test_phase6_gaps.py" = ["S105", "S106", "S310", "S311", "S603", "S607", "S608", "F811"]
+"tests/integration/test_reporting.py" = ["S105", "S106", "S310", "S311", "S603", "S607", "S608", "F811"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ["migrations/env.py"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: requires a running PostgreSQL (TEST_DATABASE_URL)",
+    "resilience: drives docker compose; requires RUN_RESILIENCE=1",
+]
+addopts = "-ra"

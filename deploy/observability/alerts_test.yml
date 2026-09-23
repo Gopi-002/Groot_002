@@ -1,0 +1,56 @@
+# promtool test rules deploy/observability/alerts_test.yml
+# Proves the external alert rules FIRE (and stay quiet) on synthetic series.
+rule_files:
+  - alerts.yml
+evaluation_interval: 30s
+tests:
+  - interval: 30s
+    input_series:
+      - series: 'up{job="sentinelops"}'
+        values: "1 1 0 0 0 0 0 0"
+      - series: 'sentinel_last_check_age_seconds'
+        values: "10 10 300 300 300 300 300 300"
+      - series: 'sentinel_alerts_firing{alert="ai_auth_failed"}'
+        values: "0 0 1 1 1 1 1 1"
+      - series: 'sentinel_alerts_firing{alert="backup_failed"}'
+        values: "0 0 0 1 1 1 1 1"
+      - series: 'sentinel_backup_last_success_age_seconds'
+        values: "3600 3600 3600 3600 3600 3600 3600 3600"
+      - series: 'sentinel_outbox_oldest_unpublished_age_seconds'
+        values: "0 0 0 0 0 0 0 0"
+      - series: 'sentinel_queue_lag'
+        values: "0 0 0 0 0 0 0 0"
+      - series: 'sentinel_ai_auth_errors_total'
+        values: "0 0 0 0 0 0 0 0"
+    alert_rule_test:
+      - eval_time: 3m30s
+        alertname: SentinelOpsHostOrApiDown
+        exp_alerts:
+          - exp_labels: {severity: critical, job: sentinelops}
+            exp_annotations:
+              summary: "SentinelOps API unreachable or not ready (host down?)"
+              runbook: "docs/runbook.md#host-or-api-down"
+      - eval_time: 3m30s
+        alertname: SentinelOpsMonitorSilent
+        exp_alerts:
+          - exp_labels: {severity: critical}
+            exp_annotations:
+              summary: "No health check recorded for 5m 0s"
+              runbook: "docs/runbook.md#alert-monitor-silent"
+      - eval_time: 2m
+        alertname: SentinelOpsAiAuthFailed
+        exp_alerts:
+          - exp_labels: {severity: critical, alert: ai_auth_failed}
+            exp_annotations:
+              summary: "AI authentication failed/expired - AI paused, monitoring continues"
+              runbook: "docs/runbook.md#alert-ai-auth-failed"
+      - eval_time: 2m
+        alertname: SentinelOpsBackupFailedOrOverdue
+        exp_alerts:
+          - exp_labels: {severity: critical, alert: backup_failed}
+            exp_annotations:
+              summary: "Backup failed or no successful backup in 26 h"
+              runbook: "docs/runbook.md#alert-backup-failed"
+      - eval_time: 3m30s
+        alertname: SentinelOpsQueueBacklog
+        exp_alerts: []

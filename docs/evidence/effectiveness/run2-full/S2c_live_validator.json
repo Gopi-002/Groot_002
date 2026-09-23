@@ -1,0 +1,63 @@
+{
+  "incident_id": "b963229e-66c6-4668-8e69-f3f46eda2df6",
+  "cases": {
+    "control_valid": {
+      "accepted": true,
+      "errors": []
+    },
+    "target_postgres": {
+      "accepted": false,
+      "errors": [
+        "schema: proposed_action.target_service: Input should be 'demo-app'"
+      ]
+    },
+    "action_restart_postgres": {
+      "accepted": false,
+      "errors": [
+        "schema: proposed_action.action: Input should be 'restart_demo_app', 'no_action' or 'escalate_to_human'"
+      ]
+    },
+    "action_run_shell": {
+      "accepted": false,
+      "errors": [
+        "schema: proposed_action.action: Input should be 'restart_demo_app', 'no_action' or 'escalate_to_human'"
+      ]
+    }
+  },
+  "criteria": {
+    "C2c.1 control (allowlisted) payload accepted with the same evidence": {
+      "result": "PASS",
+      "detail": {
+        "accepted": true,
+        "errors": []
+      }
+    },
+    "C2c.2 target 'postgres' rejected by the live validator": {
+      "result": "PASS",
+      "detail": {
+        "accepted": false,
+        "errors": [
+          "schema: proposed_action.target_service: Input should be 'demo-app'"
+        ]
+      }
+    },
+    "C2c.3 action 'restart_postgres' rejected": {
+      "result": "PASS",
+      "detail": {
+        "accepted": false,
+        "errors": [
+          "schema: proposed_action.action: Input should be 'restart_demo_app', 'no_action' or 'escalate_to_human'"
+        ]
+      }
+    },
+    "C2c.4 action 'run_shell' rejected": {
+      "result": "PASS",
+      "detail": {
+        "accepted": false,
+        "errors": [
+          "schema: proposed_action.action: Input should be 'restart_demo_app', 'no_action' or 'escalate_to_human'"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,390 @@
+{
+  "injection": {
+    "mode": "http_500",
+    "sticky": true,
+    "at": "2026-09-23T13:32:19.504664+00:00",
+    "epoch": 1790170339.5046642,
+    "http": 200,
+    "db_now_before": "2026-09-23 13:32:19.497436+00"
+  },
+  "final_task_state": "escalated:recovery_failed",
+  "records": {
+    "incident": {
+      "id": "c0323d2c-ecf6-478b-8919-add193f505a0",
+      "incident_type": "http_error",
+      "status": "escalated",
+      "resolution": null,
+      "severity": "high",
+      "occurrence_count": 32,
+      "first_failure_at": "2026-09-23T13:32:22.844178+00:00",
+      "opened_at": "2026-09-23T13:32:32.844176+00:00",
+      "resolved_at": null,
+      "summary": "3 consecutive http_error checks"
+    },
+    "task": {
+      "id": "4cdd315f-3071-4ac1-86b4-f90795d7dc56",
+      "status": "escalated",
+      "outcome": "recovery_failed",
+      "attempt": 2,
+      "created_at": "2026-09-23T13:32:32.847587+00:00",
+      "completed_at": "2026-09-23T13:34:34.607651+00:00"
+    },
+    "evidence": [
+      {
+        "id": "c3fb0c59-488d-4104-bf1e-e56c95660add",
+        "source": "health_check",
+        "tool_name": null,
+        "status": null,
+        "collected_at": "2026-09-23T13:32:32.847587+00:00",
+        "content_sha256": "e977f989b8490e19ca35557ebc284efeb9f6e600e1acc2cdabf37a6e43fbebc7"
+      },
+      {
+        "id": "3b5ac3e4-8e9b-41be-8632-9d8e45ed6ea5",
+        "source": "tool",
+        "tool_name": "get_incident",
+        "status": "ok",
+        "collected_at": "2026-09-23T13:32:33.05198+00:00",
+        "content_sha256": "50ae5adff4c3a957927e1bce6ccb77df6748f20c54a2c4b408142b6b20d54d87"
+      },
+      {
+        "id": "8a4104a0-69ce-44ef-9d16-815618c1f212",
+        "source": "tool",
+        "tool_name": "get_application_logs",
+        "status": "ok",
+        "collected_at": "2026-09-23T13:32:33.083245+00:00",
+        "content_sha256": "40991ad6ac85eb2397e35421ddec94741dc35a78835a0a6af5b40491cb927486"
+      },
+      {
+        "id": "a6c3942d-fc06-48d3-b2cb-15cf469f6a47",
+        "source": "tool",
+        "tool_name": "get_container_status",
+        "status": "ok",
+        "collected_at": "2026-09-23T13:32:33.105818+00:00",
+        "content_sha256": "568a71ed6b4e2752a736e7e3a591f752575a73547713870dd04392bee3be8712"
+      },
+      {
+        "id": "89138d54-4fbb-46fb-91d3-5fafb0373547",
+        "source": "verification",
+        "tool_name": "recovery_verification",
+        "status": null,
+        "collected_at": "2026-09-23T13:34:34.602877+00:00",
+        "content_sha256": "bb1c7877b4c08fae15329937b0c054ef39a37709f356e456fa4daaeadaa5c6da"
+      }
+    ],
+    "investigation": {
+      "id": "9df906c8-1c9a-45ee-96fc-d5e31d9077ed",
+      "status": "completed",
+      "failure_reason": null,
+      "model_id": "mock-investigator-v1",
+      "auth_mode": "mock",
+      "tool_calls": 3,
+      "model_calls": 4,
+      "reasoning_attempts": 0,
+      "input_tokens": 2000,
+      "output_tokens": 400,
+      "cost_usd": null,
+      "started_at": "2026-09-23T13:32:33.033483+00:00",
+      "completed_at": "2026-09-23T13:32:33.115608+00:00",
+      "result": {
+        "risks": [
+          "A restart briefly interrupts the demo application."
+        ],
+        "next_step": "propose_remediation",
+        "hypotheses": [
+          {
+            "certainty": "hypothesis",
+            "statement": "The application process is in a degraded state that a restart may clear (unconfirmed).",
+            "confidence": "medium",
+            "supporting_evidence_ids": [
+              "3b5ac3e4-8e9b-41be-8632-9d8e45ed6ea5",
+              "8a4104a0-69ce-44ef-9d16-815618c1f212",
+              "a6c3942d-fc06-48d3-b2cb-15cf469f6a47"
+            ]
+          }
+        ],
+        "incident_id": "c0323d2c-ecf6-478b-8919-add193f505a0",
+        "evidence_ids": [
+          "3b5ac3e4-8e9b-41be-8632-9d8e45ed6ea5",
+          "8a4104a0-69ce-44ef-9d16-815618c1f212",
+          "a6c3942d-fc06-48d3-b2cb-15cf469f6a47"
+        ],
+        "observations": [
+          {
+            "statement": "The monitor recorded a http_error incident with 1 failing check(s).",
+            "evidence_ids": [
+              "3b5ac3e4-8e9b-41be-8632-9d8e45ed6ea5"
+            ]
+          },
+          {
+            "statement": "Tool get_application_logs returned status 'ok'.",
+            "evidence_ids": [
+              "8a4104a0-69ce-44ef-9d16-815618c1f212"
+            ]
+          },
+          {
+            "statement": "Tool get_container_status returned status 'ok'.",
+            "evidence_ids": [
+              "a6c3942d-fc06-48d3-b2cb-15cf469f6a47"
+            ]
+          }
+        ],
+        "proposed_action": {
+          "action": "restart_demo_app",
+          "rationale": "Proposal only; the deterministic policy decides.",
+          "evidence_ids": [
+            "3b5ac3e4-8e9b-41be-8632-9d8e45ed6ea5",
+            "8a4104a0-69ce-44ef-9d16-815618c1f212",
+            "a6c3942d-fc06-48d3-b2cb-15cf469f6a47"
+          ],
+          "target_service": "demo-app"
+        },
+        "missing_evidence": [],
+        "verification_plan": [
+          "Confirm 3 consecutive healthy checks after any action."
+        ]
+      },
+      "rejections": []
+    },
+    "policy_decisions": [
+      {
+        "id": "ac57caf2-b2c0-480c-9188-1f1d541405b0",
+        "phase": "proposal",
+        "proposed_action": "restart_demo_app",
+        "decision": "ALLOW",
+        "rule_ids": [
+          "AUT-1"
+        ],
+        "reasons": [
+          "preauthorized autonomous demo restart; all conditions hold"
+        ],
+        "policy_version": "5f01b017223b3c64",
+        "action_fingerprint": "aafc8c7bc60f2633e0eee1b74158db38531fb7f19be2d15392d0988636dda104",
+        "evaluated_at": "2026-09-23T13:32:33.987753+00:00",
+        "proposed_target": "demo-app"
+      },
+      {
+        "id": "ab31a890-9402-413f-b1b8-6f259acf540c",
+        "phase": "pre_execution",
+        "proposed_action": "restart_demo_app",
+        "decision": "ALLOW",
+        "rule_ids": [
+          "AUT-1"
+        ],
+        "reasons": [
+          "preauthorized autonomous demo restart; all conditions hold"
+        ],
+        "policy_version": "5f01b017223b3c64",
+        "action_fingerprint": "aafc8c7bc60f2633e0eee1b74158db38531fb7f19be2d15392d0988636dda104",
+        "evaluated_at": "2026-09-23T13:32:33.996745+00:00",
+        "proposed_target": "demo-app"
+      }
+    ],
+    "action_attempts": [
+      {
+        "id": "b6653616-d93b-4d2d-8f0a-83c463cf9463",
+        "action_id": "3df18585-f6f8-52d9-8e68-36a5a0e21d73",
+        "action_type": "restart_demo_app",
+        "status": "succeeded",
+        "fencing_token": 2,
+        "requested_at": "2026-09-23T13:32:33.987753+00:00",
+        "started_at": "2026-09-23T13:32:34.027536+00:00",
+        "completed_at": "2026-09-23T13:32:34.593888+00:00",
+        "error": null
+      }
+    ],
+    "ledger_rows_for_actions": {
+      "3df18585-f6f8-52d9-8e68-36a5a0e21d73": 1
+    },
+    "verifications": [
+      {
+        "id": "6fbedb51-08c1-4d78-bb88-a4846488d97d",
+        "status": "failed",
+        "reason": "readiness deadline 120.0s exceeded without 3 consecutive healthy, fast probes",
+        "criteria": {
+          "error_levels": [
+            "ERROR",
+            "CRITICAL"
+          ],
+          "latency_max_seconds": 2.0,
+          "consecutive_successes": 3,
+          "probe_interval_seconds": 2.0,
+          "readiness_deadline_seconds": 120.0
+        },
+        "started_at": "2026-09-23T13:32:34.597439+00:00",
+        "completed_at": "2026-09-23T13:34:34.602877+00:00",
+        "n_observations": 61
+      }
+    ],
+    "approvals": [],
+    "notifications": [
+      {
+        "event_type": "recovery_verification_failed",
+        "severity": "critical",
+        "channel": "webhook",
+        "status": "delivered"
+      },
+      {
+        "event_type": "recovery_verification_failed",
+        "severity": "critical",
+        "channel": "log",
+        "status": "delivered"
+      },
+      {
+        "event_type": "report_ready",
+        "severity": "info",
+        "channel": "webhook",
+        "status": "delivered"
+      },
+      {
+        "event_type": "report_ready",
+        "severity": "info",
+        "channel": "log",
+        "status": "delivered"
+      }
+    ]
+  },
+  "timings": {
+    "inject_to_first_failing_check_s": 3.34,
+    "inject_to_incident_opened_s": 13.34,
+    "investigation_duration_s": 0.082,
+    "opened_to_action_started_s": 1.183,
+    "restart_duration_s": 0.566,
+    "action_to_verification_verdict_s": 120.009,
+    "opened_to_task_terminal_s": 121.763,
+    "inject_to_incident_resolved_s": null
+  },
+  "monitor_checks": {
+    "checks": 35,
+    "outcomes": {
+      "unhealthy": 35
+    },
+    "first_failing": {
+      "checked_at": "2026-09-23T13:32:22.844178+00:00",
+      "outcome": "unhealthy",
+      "http_status": 500,
+      "latency_ms": 2.176
+    }
+  },
+  "independent_probe_after_restart": {
+    "probes": 159,
+    "codes": {
+      "ConnectionResetError": 1,
+      "500": 158
+    }
+  },
+  "report": {
+    "id": "72295587-6ea4-4252-9f8e-91882ac79bd0",
+    "status": "validated",
+    "path": "docs/evidence/effectiveness/run2-full/S3_sticky_unrecoverable-report-v1.md"
+  },
+  "report_checks": {
+    "report_exists": true,
+    "status_validated_or_fallback": true,
+    "record_sha256_present": true,
+    "names_incident_id": true,
+    "every_listed_evidence_id_exists_for_incident": true,
+    "every_policy_decision_and_rule_rendered": true,
+    "action_attempt_record_ids_rendered": true,
+    "executor_action_id_ledger_key_rendered": false,
+    "no_recovery_claim_in_summary": true,
+    "not_claimed_resolved_as_remediated": true,
+    "says_verification_failed": true
+  },
+  "criteria": {
+    "C3.1 incident detected within 60 s": {
+      "result": "PASS",
+      "detail": 13.34
+    },
+    "C3.2 exactly one authorized restart (policy ALLOW, ledger +1)": {
+      "result": "PASS",
+      "detail": {
+        "attempts": 1,
+        "ledger_delta": 1,
+        "policy": [
+          [
+            "proposal",
+            "ALLOW",
+            [
+              "AUT-1"
+            ]
+          ],
+          [
+            "pre_execution",
+            "ALLOW",
+            [
+              "AUT-1"
+            ]
+          ]
+        ]
+      }
+    },
+    "C3.3 verification failed": {
+      "result": "PASS",
+      "detail": "readiness deadline 120.0s exceeded without 3 consecutive healthy, fast probes"
+    },
+    "C3.4 no second restart >= 35 s after escalation": {
+      "result": "PASS",
+      "detail": {
+        "ledger": 52
+      }
+    },
+    "C3.5 incident escalated and still open; task escalated:recovery_failed": {
+      "result": "PASS",
+      "detail": {
+        "incident": "escalated",
+        "task": "escalated:recovery_failed"
+      }
+    },
+    "C3.6 report never claims recovery and its facts match records": {
+      "result": "PASS",
+      "detail": {
+        "report_exists": true,
+        "status_validated_or_fallback": true,
+        "record_sha256_present": true,
+        "names_incident_id": true,
+        "every_listed_evidence_id_exists_for_incident": true,
+        "every_policy_decision_and_rule_rendered": true,
+        "action_attempt_record_ids_rendered": true,
+        "executor_action_id_ledger_key_rendered": false,
+        "no_recovery_claim_in_summary": true,
+        "not_claimed_resolved_as_remediated": true,
+        "says_verification_failed": true
+      }
+    },
+    "C3.7 independent probe confirms demo still failing after the restart": {
+      "result": "PASS",
+      "detail": {
+        "probes": 159,
+        "codes": {
+          "ConnectionResetError": 1,
+          "500": 158
+        }
+      }
+    },
+    "C3.8 critical recovery_verification_failed notification delivered": {
+      "result": "PASS",
+      "detail": [
+        {
+          "event_type": "recovery_verification_failed",
+          "severity": "critical",
+          "channel": "webhook",
+          "status": "delivered"
+        },
+        {
+          "event_type": "recovery_verification_failed",
+          "severity": "critical",
+          "channel": "log",
+          "status": "delivered"
+        }
+      ]
+    },
+    "C3.9 report cites the executor action_id (ledger key) for traceability": {
+      "result": "FAIL",
+      "detail": {
+        "action_ids": [
+          "3df18585-f6f8-52d9-8e68-36a5a0e21d73"
+        ]
+      }
+    }
+  }
+}

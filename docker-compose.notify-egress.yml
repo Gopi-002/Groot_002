@@ -1,0 +1,13 @@
+# Opt-in override for REAL webhook providers (VM deployment): gives ONLY the
+# notifier an egress route. The destination is still restricted by
+# SENTINEL_NOTIFY_WEBHOOK_URL + SENTINEL_NOTIFY_WEBHOOK_ALLOWED_HOSTS (HTTPS only
+# outside development/test/demo). Add a host egress firewall allowing only that
+# host where possible. Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.notify-egress.yml up -d
+services:
+  notifier:
+    networks: [backend, notify_net, notify_egress]
+networks:
+  notify_egress:
+    driver_opts:
+      com.docker.network.bridge.name: sentinel-notify   # stable name for host firewall rules

@@ -1,0 +1,102 @@
+{
+  "captured_at": "2026-09-23 05:50:56.450862+00",
+  "model": "mock-investigator-v1 (TEST/DEMO ONLY - not Claude)",
+  "A_healthy_baseline": {
+    "checks": 6,
+    "outcomes": "healthy",
+    "incidents": 0
+  },
+  "B_container_down": {
+    "incident_id": "6962724e-5407-4f31-ac64-89acb9e3f1f5",
+    "incidents": 1,
+    "detail": "unavailable:6"
+  },
+  "D_healthy_path": {
+    "incident_id": "e03fd6bb-2777-4a9c-b753-2d79e2de1c43",
+    "task_id": "3ac81b0b-7fb2-4ed0-9694-71061715e140",
+    "incident": "resolved:remediated",
+    "task": "resolved:recovery_verified",
+    "investigation": "0ca41dd3-ec89-48f1-86d0-4021244d4ee9 completed model=mock-investigator-v1 auth=mock tools=3",
+    "tools_used": "get_incident:ok,get_application_logs:ok,get_container_status:ok",
+    "policy": "proposal=ALLOW{AUT-1} pre_execution=ALLOW{AUT-1}",
+    "action": "63717d0d-04a8-5db8-9d7d-78e1b57072e2 succeeded",
+    "verification": "passed: 3 consecutive healthy probes under 2.0s and no new critical errors",
+    "audit_actions": "action_execution_intent,action_succeeded,ai_tool_call,incident_opened,investigation_completed,investigation_started,policy_decision,recovery_verified,report_generated,task_awaiting_policy,task_claimed,task_resolved",
+    "restarts_executed": 1,
+    "container_restarted": true,
+    "report": {
+      "id": "e2b0ddda-7975-4301-9081-484ea92ac6ed",
+      "version": 1,
+      "generation_mode": "ai",
+      "model_id": "mock-investigator-v1",
+      "auth_mode": "mock",
+      "record_sha256": "c12b4fee1a5f538c9bd45ecc15f8e271b0a5d753217cd8e79fe55aebb8a50741"
+    },
+    "notifications_webhook": {
+      "remediation_performed": "delivered",
+      "report_ready": "delivered"
+    },
+    "checks_after_resolution": 3,
+    "detection_to_resolution_seconds": 10.001087,
+    "injected_at_or_after": "2026-09-23 05:51:55.24573+00"
+  },
+  "E_blocked": {
+    "incident_id": "ba71f0ef-d7d6-4e83-8595-92757522b9dc",
+    "task_id": "f7f0191a-4221-439f-828b-fef3dc5fe826",
+    "incident": "escalated:-",
+    "task": "escalated:policy_denied",
+    "investigation": "c0e41525-eff6-44bd-93e1-0df61bd39bc4 completed model=mock-investigator-v1 auth=mock tools=3",
+    "tools_used": "get_incident:ok,get_application_logs:ok,get_container_status:ok",
+    "policy": "proposal=DENY{ENV-2}",
+    "action": "",
+    "verification": "",
+    "audit_actions": "action_skipped,ai_tool_call,incident_escalated,incident_opened,investigation_completed,investigation_started,policy_decision,report_generated,task_awaiting_policy,task_claimed,task_escalated",
+    "action_attempts": 0,
+    "ledger_delta": 0,
+    "report_status": "validated",
+    "notifications_webhook": {
+      "incident_escalated": "delivered",
+      "report_ready": "delivered"
+    }
+  },
+  "AP_approval": {
+    "incident_id": "1b8e8615-1e81-4c51-be8b-64aff4c3d66f",
+    "task_id": "77e12c58-419b-4219-896a-e5e1bf3e8f7a",
+    "incident": "resolved:remediated",
+    "task": "resolved:recovery_verified",
+    "investigation": "e77d96b5-ec47-4e0c-93fa-46d9abcc6bc0 completed model=mock-investigator-v1 auth=mock tools=3",
+    "tools_used": "get_incident:ok,get_application_logs:ok,get_container_status:ok",
+    "policy": "proposal=REQUIRE_APPROVAL{APR-0} proposal=ALLOW{APR-1} pre_execution=ALLOW{APR-1}",
+    "action": "ff1d2970-9906-5d86-9431-f0bada979d05 succeeded",
+    "verification": "passed: 3 consecutive healthy probes under 2.0s and no new critical errors",
+    "audit_actions": "action_execution_intent,action_succeeded,ai_tool_call,incident_opened,investigation_completed,investigation_started,policy_decision,recovery_verified,task_awaiting_policy,task_claimed,task_resolved,task_waiting_approval",
+    "approval_id": "f4928731-bc84-4300-bc21-4b332f86c798",
+    "concurrent_results": [
+      200,
+      409,
+      409,
+      409
+    ],
+    "restarts_executed": 1,
+    "report_status": "validated"
+  },
+  "F_failed_recovery": {
+    "incident_id": "8d62b459-c059-4c06-8ccb-b97c000370e8",
+    "task_id": "3a061118-6925-4c9f-b889-9e15118eae15",
+    "incident": "escalated:-",
+    "task": "escalated:recovery_failed",
+    "investigation": "5189336a-350f-4bbb-91f1-73fcd74a99fe completed model=mock-investigator-v1 auth=mock tools=3",
+    "tools_used": "get_incident:ok,get_application_logs:ok,get_container_status:ok",
+    "policy": "proposal=ALLOW{AUT-1} pre_execution=ALLOW{AUT-1}",
+    "action": "26fd13f5-d7c9-5314-a366-e4721856ce50 succeeded",
+    "verification": "failed: readiness deadline 30.0s exceeded without 3 consecutive healthy, fast probes",
+    "audit_actions": "action_execution_intent,action_succeeded,ai_tool_call,incident_escalated,incident_opened,investigation_completed,investigation_started,policy_decision,recovery_failed,report_generated,task_awaiting_policy,task_claimed,task_escalated",
+    "restarts_executed": 1,
+    "report_status": "validated",
+    "notification_severity": "critical",
+    "notifications_webhook": {
+      "recovery_verification_failed": "delivered",
+      "report_ready": "delivered"
+    }
+  }
+}

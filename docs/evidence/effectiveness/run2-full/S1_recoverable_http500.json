@@ -1,0 +1,420 @@
+{
+  "injection": {
+    "mode": "http_500",
+    "sticky": false,
+    "at": "2026-09-23T13:31:13.787750+00:00",
+    "epoch": 1790170273.7877505,
+    "http": 200,
+    "db_now_before": "2026-09-23 13:31:13.774344+00"
+  },
+  "final_task_state": "resolved:recovery_verified",
+  "records": {
+    "incident": {
+      "id": "05ff17e2-41af-4e70-9c95-21fc3fef3ac2",
+      "incident_type": "http_error",
+      "status": "resolved",
+      "resolution": "remediated",
+      "severity": "high",
+      "occurrence_count": 1,
+      "first_failure_at": "2026-09-23T13:31:17.844212+00:00",
+      "opened_at": "2026-09-23T13:31:27.844235+00:00",
+      "resolved_at": "2026-09-23T13:31:36.381391+00:00",
+      "summary": "3 consecutive http_error checks"
+    },
+    "task": {
+      "id": "95630ba1-c186-4077-8416-4e35ab8804c6",
+      "status": "resolved",
+      "outcome": "recovery_verified",
+      "attempt": 2,
+      "created_at": "2026-09-23T13:31:27.848818+00:00",
+      "completed_at": "2026-09-23T13:31:36.381391+00:00"
+    },
+    "evidence": [
+      {
+        "id": "ad9b07a7-f27d-4c69-861b-8e75c2fd6863",
+        "source": "health_check",
+        "tool_name": null,
+        "status": null,
+        "collected_at": "2026-09-23T13:31:27.848818+00:00",
+        "content_sha256": "ac7432cb0a10a3212fbd1c3c6a58c88f72a61cd4c7ccca1eeb6dafba0f322450"
+      },
+      {
+        "id": "0b307a70-3315-413b-8028-c89e9be5b9d2",
+        "source": "tool",
+        "tool_name": "get_incident",
+        "status": "ok",
+        "collected_at": "2026-09-23T13:31:28.620103+00:00",
+        "content_sha256": "5d71dafb47d02b4b70e20297a9e1059d6f271100ce35e0b5221ca010d062ebea"
+      },
+      {
+        "id": "b429c503-8e87-4450-b639-f16024dec0c6",
+        "source": "tool",
+        "tool_name": "get_application_logs",
+        "status": "ok",
+        "collected_at": "2026-09-23T13:31:28.656793+00:00",
+        "content_sha256": "ba01f4a20e2553d371d12c2a008e91963d71bc6473cd12542b011ece57af890c"
+      },
+      {
+        "id": "fe5983c1-7848-45b5-8137-a1919c5665c3",
+        "source": "tool",
+        "tool_name": "get_container_status",
+        "status": "ok",
+        "collected_at": "2026-09-23T13:31:28.683496+00:00",
+        "content_sha256": "9d28038006ada73631901efb2747d93759d98790d8e4070feb5f08ef9af63d1f"
+      },
+      {
+        "id": "b93fcc85-eccc-43e7-9667-89a7b413f6e2",
+        "source": "verification",
+        "tool_name": "recovery_verification",
+        "status": null,
+        "collected_at": "2026-09-23T13:31:36.378025+00:00",
+        "content_sha256": "17f4b98d125a77264efc4a38e5c7848f402a181a68f7047d84363f9c0217e3b6"
+      }
+    ],
+    "investigation": {
+      "id": "d998611f-b85d-4469-80f4-0b8bfd228cec",
+      "status": "completed",
+      "failure_reason": null,
+      "model_id": "mock-investigator-v1",
+      "auth_mode": "mock",
+      "tool_calls": 3,
+      "model_calls": 4,
+      "reasoning_attempts": 0,
+      "input_tokens": 2000,
+      "output_tokens": 400,
+      "cost_usd": null,
+      "started_at": "2026-09-23T13:31:28.603473+00:00",
+      "completed_at": "2026-09-23T13:31:28.696294+00:00",
+      "result": {
+        "risks": [
+          "A restart briefly interrupts the demo application."
+        ],
+        "next_step": "propose_remediation",
+        "hypotheses": [
+          {
+            "certainty": "hypothesis",
+            "statement": "The application process is in a degraded state that a restart may clear (unconfirmed).",
+            "confidence": "medium",
+            "supporting_evidence_ids": [
+              "0b307a70-3315-413b-8028-c89e9be5b9d2",
+              "b429c503-8e87-4450-b639-f16024dec0c6",
+              "fe5983c1-7848-45b5-8137-a1919c5665c3"
+            ]
+          }
+        ],
+        "incident_id": "05ff17e2-41af-4e70-9c95-21fc3fef3ac2",
+        "evidence_ids": [
+          "0b307a70-3315-413b-8028-c89e9be5b9d2",
+          "b429c503-8e87-4450-b639-f16024dec0c6",
+          "fe5983c1-7848-45b5-8137-a1919c5665c3"
+        ],
+        "observations": [
+          {
+            "statement": "The monitor recorded a http_error incident with 1 failing check(s).",
+            "evidence_ids": [
+              "0b307a70-3315-413b-8028-c89e9be5b9d2"
+            ]
+          },
+          {
+            "statement": "Tool get_application_logs returned status 'ok'.",
+            "evidence_ids": [
+              "b429c503-8e87-4450-b639-f16024dec0c6"
+            ]
+          },
+          {
+            "statement": "Tool get_container_status returned status 'ok'.",
+            "evidence_ids": [
+              "fe5983c1-7848-45b5-8137-a1919c5665c3"
+            ]
+          }
+        ],
+        "proposed_action": {
+          "action": "restart_demo_app",
+          "rationale": "Proposal only; the deterministic policy decides.",
+          "evidence_ids": [
+            "0b307a70-3315-413b-8028-c89e9be5b9d2",
+            "b429c503-8e87-4450-b639-f16024dec0c6",
+            "fe5983c1-7848-45b5-8137-a1919c5665c3"
+          ],
+          "target_service": "demo-app"
+        },
+        "missing_evidence": [],
+        "verification_plan": [
+          "Confirm 3 consecutive healthy checks after any action."
+        ]
+      },
+      "rejections": []
+    },
+    "policy_decisions": [
+      {
+        "id": "65558059-a9f9-4f1f-93df-26c7c8af7f5c",
+        "phase": "proposal",
+        "proposed_action": "restart_demo_app",
+        "decision": "ALLOW",
+        "rule_ids": [
+          "AUT-1"
+        ],
+        "reasons": [
+          "preauthorized autonomous demo restart; all conditions hold"
+        ],
+        "policy_version": "5f01b017223b3c64",
+        "action_fingerprint": "596a88d7faa262d4ee03914a6e93d36f0d4827913c12a568a336759d9f2faccc",
+        "evaluated_at": "2026-09-23T13:31:29.613755+00:00",
+        "proposed_target": "demo-app"
+      },
+      {
+        "id": "e9bf4ac4-647b-465c-8c50-b1fea55de1d1",
+        "phase": "pre_execution",
+        "proposed_action": "restart_demo_app",
+        "decision": "ALLOW",
+        "rule_ids": [
+          "AUT-1"
+        ],
+        "reasons": [
+          "preauthorized autonomous demo restart; all conditions hold"
+        ],
+        "policy_version": "5f01b017223b3c64",
+        "action_fingerprint": "596a88d7faa262d4ee03914a6e93d36f0d4827913c12a568a336759d9f2faccc",
+        "evaluated_at": "2026-09-23T13:31:29.620945+00:00",
+        "proposed_target": "demo-app"
+      }
+    ],
+    "action_attempts": [
+      {
+        "id": "f7d59ecd-631b-455c-9de0-995ca0c36c55",
+        "action_id": "5de550e3-99ba-5094-9de4-dec89afe53ee",
+        "action_type": "restart_demo_app",
+        "status": "succeeded",
+        "fencing_token": 2,
+        "requested_at": "2026-09-23T13:31:29.613755+00:00",
+        "started_at": "2026-09-23T13:31:29.643009+00:00",
+        "completed_at": "2026-09-23T13:31:30.317495+00:00",
+        "error": null
+      }
+    ],
+    "ledger_rows_for_actions": {
+      "5de550e3-99ba-5094-9de4-dec89afe53ee": 1
+    },
+    "verifications": [
+      {
+        "id": "3782370e-4381-46c0-ac6e-4c6b25632061",
+        "status": "passed",
+        "reason": "3 consecutive healthy probes under 2.0s and no new critical errors",
+        "criteria": {
+          "error_levels": [
+            "ERROR",
+            "CRITICAL"
+          ],
+          "latency_max_seconds": 2.0,
+          "consecutive_successes": 3,
+          "probe_interval_seconds": 2.0,
+          "readiness_deadline_seconds": 120.0
+        },
+        "started_at": "2026-09-23T13:31:30.320967+00:00",
+        "completed_at": "2026-09-23T13:31:36.378025+00:00",
+        "n_observations": 5
+      }
+    ],
+    "approvals": [],
+    "notifications": [
+      {
+        "event_type": "remediation_performed",
+        "severity": "info",
+        "channel": "webhook",
+        "status": "delivered"
+      },
+      {
+        "event_type": "remediation_performed",
+        "severity": "info",
+        "channel": "log",
+        "status": "delivered"
+      },
+      {
+        "event_type": "report_ready",
+        "severity": "info",
+        "channel": "webhook",
+        "status": "delivered"
+      },
+      {
+        "event_type": "report_ready",
+        "severity": "info",
+        "channel": "log",
+        "status": "delivered"
+      }
+    ]
+  },
+  "timings": {
+    "inject_to_first_failing_check_s": 4.056,
+    "inject_to_incident_opened_s": 14.056,
+    "investigation_duration_s": 0.093,
+    "opened_to_action_started_s": 1.799,
+    "restart_duration_s": 0.674,
+    "action_to_verification_verdict_s": 6.061,
+    "opened_to_task_terminal_s": 8.537,
+    "inject_to_incident_resolved_s": 22.594
+  },
+  "monitor_checks": {
+    "checks": 10,
+    "outcomes": {
+      "unhealthy": 3,
+      "healthy": 7
+    },
+    "first_failing": {
+      "checked_at": "2026-09-23T13:31:17.844212+00:00",
+      "outcome": "unhealthy",
+      "http_status": 500,
+      "latency_ms": 2.147
+    }
+  },
+  "independent_probe": {
+    "before_action": {
+      "probes": 16,
+      "codes": {
+        "500": 16
+      }
+    },
+    "after_action": {
+      "probes": 35,
+      "codes": {
+        "ConnectionResetError": 2,
+        "200": 33
+      }
+    },
+    "first_5_healthy_streak_at": "2026-09-23T13:31:36.583206+00:00"
+  },
+  "report": {
+    "id": "f6362ce7-922d-412f-838f-417b4932443a",
+    "version": 1,
+    "generation_mode": "ai",
+    "model_id": "mock-investigator-v1",
+    "auth_mode": "mock",
+    "record_sha256": "d9f3e784610ad5e2f04a728971f478f218ca826fbfeedd5ef056d213fd5cc76f",
+    "status": "validated",
+    "path": "docs/evidence/effectiveness/run2-full/S1_recoverable_http500-report-v1.md"
+  },
+  "report_checks": {
+    "report_exists": true,
+    "status_validated_or_fallback": true,
+    "record_sha256_present": true,
+    "names_incident_id": true,
+    "every_listed_evidence_id_exists_for_incident": true,
+    "every_policy_decision_and_rule_rendered": true,
+    "action_attempt_record_ids_rendered": true,
+    "executor_action_id_ledger_key_rendered": false,
+    "verification_passed_rendered": true
+  },
+  "criteria": {
+    "C1.1 incident detected (http_error) within 60 s, exactly one": {
+      "result": "PASS",
+      "detail": 14.056
+    },
+    "C1.2 investigation completed with read-only tools returning evidence ids": {
+      "result": "PASS",
+      "detail": [
+        "get_incident:ok:0b307a70-3315-413b-8028-c89e9be5b9d2",
+        "get_application_logs:ok:b429c503-8e87-4450-b639-f16024dec0c6",
+        "get_container_status:ok:fe5983c1-7848-45b5-8137-a1919c5665c3"
+      ]
+    },
+    "C1.3 proposal = restart_demo_app on demo-app citing evidence": {
+      "result": "PASS",
+      "detail": {
+        "action": "restart_demo_app",
+        "rationale": "Proposal only; the deterministic policy decides.",
+        "evidence_ids": [
+          "0b307a70-3315-413b-8028-c89e9be5b9d2",
+          "b429c503-8e87-4450-b639-f16024dec0c6",
+          "fe5983c1-7848-45b5-8137-a1919c5665c3"
+        ],
+        "target_service": "demo-app"
+      }
+    },
+    "C1.4 policy ALLOW at proposal and pre_execution (AUT-1)": {
+      "result": "PASS",
+      "detail": [
+        [
+          "proposal",
+          "ALLOW",
+          [
+            "AUT-1"
+          ]
+        ],
+        [
+          "pre_execution",
+          "ALLOW",
+          [
+            "AUT-1"
+          ]
+        ]
+      ]
+    },
+    "C1.5 exactly one restart (1 attempt, ledger +1, StartedAt changed)": {
+      "result": "PASS",
+      "detail": {
+        "attempts": 1,
+        "ledger_delta": 1,
+        "started_before": "2026-09-23T13:29:40.446609001Z",
+        "started_after": "2026-09-23T13:31:30.054393367Z"
+      }
+    },
+    "C1.6 deterministic verification passed": {
+      "result": "PASS",
+      "detail": "3 consecutive healthy probes under 2.0s and no new critical errors"
+    },
+    "C1.7 final state incident resolved/remediated, task recovery_verified": {
+      "result": "PASS",
+      "detail": {
+        "task": "resolved:recovery_verified",
+        "incident": "resolved/remediated"
+      }
+    },
+    "C1.8 independent probe: failing before action, 5 consecutive healthy after": {
+      "result": "PASS",
+      "detail": {
+        "before_action": {
+          "probes": 16,
+          "codes": {
+            "500": 16
+          }
+        },
+        "after_action": {
+          "probes": 35,
+          "codes": {
+            "ConnectionResetError": 2,
+            "200": 33
+          }
+        },
+        "first_5_healthy_streak_at": "2026-09-23T13:31:36.583206+00:00"
+      }
+    },
+    "C1.9 report exists and its facts are consistent with records": {
+      "result": "PASS",
+      "detail": {
+        "report_exists": true,
+        "status_validated_or_fallback": true,
+        "record_sha256_present": true,
+        "names_incident_id": true,
+        "every_listed_evidence_id_exists_for_incident": true,
+        "every_policy_decision_and_rule_rendered": true,
+        "action_attempt_record_ids_rendered": true,
+        "executor_action_id_ledger_key_rendered": false,
+        "verification_passed_rendered": true
+      }
+    },
+    "C1.10 no second restart in the 25 s after completion": {
+      "result": "PASS",
+      "detail": {
+        "ledger_after_wait": 51,
+        "ledger_at_end": 51
+      }
+    },
+    "C1.11 report cites the executor action_id (ledger key) for traceability": {
+      "result": "FAIL",
+      "detail": {
+        "action_ids": [
+          "5de550e3-99ba-5094-9de4-dec89afe53ee"
+        ]
+      }
+    }
+  }
+}

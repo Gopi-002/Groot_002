@@ -1,0 +1,58 @@
+{
+  "responses": {
+    "no_bearer_token": 401,
+    "extra_target_field_postgres": 422,
+    "forged_signature": 403
+  },
+  "side_effects": {
+    "ledger_delta": 0,
+    "demo_started": [
+      "2026-09-23T13:32:34.422614288Z",
+      "2026-09-23T13:32:34.422614288Z"
+    ],
+    "postgres_started": [
+      "2026-09-23T12:46:47.373219426Z",
+      "2026-09-23T12:46:47.373219426Z"
+    ]
+  },
+  "criteria": {
+    "C2d.1 unauthenticated request refused (401/403)": {
+      "result": "PASS",
+      "detail": {
+        "no_bearer_token": 401,
+        "extra_target_field_postgres": 422,
+        "forged_signature": 403
+      }
+    },
+    "C2d.2 request naming a target refused (schema has no target field: 422)": {
+      "result": "PASS",
+      "detail": {
+        "no_bearer_token": 401,
+        "extra_target_field_postgres": 422,
+        "forged_signature": 403
+      }
+    },
+    "C2d.3 forged authorization signature refused (403)": {
+      "result": "PASS",
+      "detail": {
+        "no_bearer_token": 401,
+        "extra_target_field_postgres": 422,
+        "forged_signature": 403
+      }
+    },
+    "C2d.4 no side effect (ledger +0, demo/postgres StartedAt unchanged)": {
+      "result": "PASS",
+      "detail": {
+        "ledger_delta": 0,
+        "demo_started": [
+          "2026-09-23T13:32:34.422614288Z",
+          "2026-09-23T13:32:34.422614288Z"
+        ],
+        "postgres_started": [
+          "2026-09-23T12:46:47.373219426Z",
+          "2026-09-23T12:46:47.373219426Z"
+        ]
+      }
+    }
+  }
+}

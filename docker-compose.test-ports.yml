@@ -1,0 +1,11 @@
+# TEST/DEV ONLY override: exposes PostgreSQL and Redis on 127.0.0.1 so host-side
+# integration tests can reach them. Never use on a shared or public host.
+services:
+  postgres:
+    ports: ["127.0.0.1:55432:5432"]
+    networks: [backend, testaccess]
+  redis:
+    ports: ["127.0.0.1:56379:6379"]
+    networks: [backend, testaccess]
+networks:
+  testaccess: {}

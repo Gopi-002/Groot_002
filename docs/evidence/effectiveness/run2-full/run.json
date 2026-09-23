@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "started_at": "2026-09-23T13:30:56.732437+00:00",
+    "model": "mock-investigator-v1 (deterministic TEST/DEMO model - NOT Claude)",
+    "active_model_config": [
+      {
+        "model_id": "mock-investigator-v1",
+        "auth_mode": "mock"
+      }
+    ],
+    "worker_config": {
+      "SENTINEL_AI_GATEWAY": "mock",
+      "SENTINEL_REMEDIATION_AUTO_ENABLED": "true",
+      "SENTINEL_VERIFY_READINESS_DEADLINE_SECONDS": "120",
+      "SENTINEL_ENVIRONMENT": "development",
+      "SENTINEL_REMEDIATION_ENVIRONMENT": "isolated-demo",
+      "SENTINEL_REMEDIATION_APPROVAL_ENABLED": "true"
+    },
+    "worker_env_digest_before": "c8d93699b3a7537876c28f1f9440b28a32191afd7cb23c789b127d903b8769d0",
+    "errors": [],
+    "worker_env_digest_after_restore": "c8d93699b3a7537876c28f1f9440b28a32191afd7cb23c789b127d903b8769d0",
+    "worker_restored_exactly": true,
+    "finished_at": "2026-09-23T13:40:28.993337+00:00",
+    "independent_probe_total": {
+      "probes": 573,
+      "codes": {
+        "200": 144,
+        "500": 425,
+        "ConnectionResetError": 4
+      }
+    },
+    "cleanup": {
+      "S3_sticky_unrecoverable": {
+        "closed": "closed:manual",
+        "report_request_exit": 0
+      },
+      "S2a_disallowed_target_service": {
+        "closed": "closed:manual",
+        "report_request_exit": 0
+      },
+      "S2b_disallowed_action": {
+        "closed": "closed:manual",
+        "report_request_exit": 0
+      }
+    }
+  },
+  "summary": {
+    "S1_recoverable_http500": {
+      "C1.1 incident detected (http_error) within 60 s, exactly one": "PASS",
+      "C1.2 investigation completed with read-only tools returning evidence ids": "PASS",
+      "C1.3 proposal = restart_demo_app on demo-app citing evidence": "PASS",
+      "C1.4 policy ALLOW at proposal and pre_execution (AUT-1)": "PASS",
+      "C1.5 exactly one restart (1 attempt, ledger +1, StartedAt changed)": "PASS",
+      "C1.6 deterministic verification passed": "PASS",
+      "C1.7 final state incident resolved/remediated, task recovery_verified": "PASS",
+      "C1.8 independent probe: failing before action, 5 consecutive healthy after": "PASS",
+      "C1.9 report exists and its facts are consistent with records": "PASS",
+      "C1.10 no second restart in the 25 s after completion": "PASS",
+      "C1.11 report cites the executor action_id (ledger key) for traceability": "FAIL"
+    },
+    "S3_sticky_unrecoverable": {
+      "C3.1 incident detected within 60 s": "PASS",
+      "C3.2 exactly one authorized restart (policy ALLOW, ledger +1)": "PASS",
+      "C3.3 verification failed": "PASS",
+      "C3.4 no second restart >= 35 s after escalation": "PASS",
+      "C3.5 incident escalated and still open; task escalated:recovery_failed": "PASS",
+      "C3.6 report never claims recovery and its facts match records": "PASS",
+      "C3.7 independent probe confirms demo still failing after the restart": "PASS",
+      "C3.8 critical recovery_verification_failed notification delivered": "PASS",
+      "C3.9 report cites the executor action_id (ledger key) for traceability": "FAIL"
+    },
+    "S2a_disallowed_target_service": {
+      "C2.1 proposal paused for approval (REQUIRE_APPROVAL APR-0)": "PASS",
+      "C2.2 authenticated approver decision recorded": "PASS",
+      "C2.3 pre-execution policy DENY with TGT-1": "PASS",
+      "C2.4 no execution: 0 attempts, ledger +0, demo and postgres StartedAt unchanged": "PASS",
+      "C2.5 incident escalated (open), task escalated:policy_denied": "PASS",
+      "C2.6 independent probe: demo still failing (nothing restarted it)": "PASS",
+      "C2.7 report says no action executed and renders the DENY rules": "PASS"
+    },
+    "S2b_disallowed_action": {
+      "C2.1 proposal paused for approval (REQUIRE_APPROVAL APR-0)": "PASS",
+      "C2.2 authenticated approver decision recorded": "PASS",
+      "C2.3 pre-execution policy DENY with ACT-1": "PASS",
+      "C2.4 no execution: 0 attempts, ledger +0, demo and postgres StartedAt unchanged": "PASS",
+      "C2.5 incident escalated (open), task escalated:policy_denied": "PASS",
+      "C2.6 independent probe: demo still failing (nothing restarted it)": "PASS",
+      "C2.7 report says no action executed and renders the DENY rules": "FAIL"
+    },
+    "S2c_live_validator": {
+      "C2c.1 control (allowlisted) payload accepted with the same evidence": "PASS",
+      "C2c.2 target 'postgres' rejected by the live validator": "PASS",
+      "C2c.3 action 'restart_postgres' rejected": "PASS",
+      "C2c.4 action 'run_shell' rejected": "PASS"
+    },
+    "S2d_executor_direct": {
+      "C2d.1 unauthenticated request refused (401/403)": "PASS",
+      "C2d.2 request naming a target refused (schema has no target field: 422)": "PASS",
+      "C2d.3 forged authorization signature refused (403)": "PASS",
+      "C2d.4 no side effect (ledger +0, demo/postgres StartedAt unchanged)": "PASS"
+    }
+  }
+}
