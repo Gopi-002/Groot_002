@@ -1,0 +1,55 @@
+$ uv run sentinelops status
+  postgres     running healthy
+  redis        running healthy
+  api          running healthy
+  demo-app     running healthy
+  monitor      running healthy
+  dispatcher   running healthy
+  worker       running healthy
+  ops-reader   running healthy
+  executor     running healthy
+  notifier     running healthy
+  notify-sink  running healthy
+All services healthy.
+AI mode: MOCK / DEMO - deterministic test model, NOT Claude. No Anthropic calls, no cost. Findings are not real AI analysis.
+  selected model: mock:mock-investigator-v1
+Remediation: human approval required (isolated demo only)
+Agent overall: degraded
+  executor: degraded
+
+Dashboard: http://127.0.0.1:8000/dashboard/   (local only; bound to 127.0.0.1)
+  It asks for the read-only API token: the SENTINEL_API_READ_TOKEN value in /tmp/claude-1000/-workspaces-Groot-002/91611681-be2f-4c80-ab1d-936e4de5fedf/scratchpad/fresh/sentinelops/.env (not printed here).
+[exit code 0]
+
+$ uv run sentinelops doctor
+  ok   Python >= 3.12: 3.12.3
+  ok   Docker CLI: Docker version 29.8.0-1, build 88096ef00576baf72a9cb45caa45c0544c40e0a7
+  ok   Docker daemon running: server 29.8.0-1
+  ok   Docker Compose v2: 5.5.1
+  ok   configuration: all required values set
+  ok   DOCKER_GID matches the socket group (990)
+  ok   docker-compose.yml validates
+  ok   image sentinelops:dev built
+  ok   all services healthy
+  info AI gateway in .env: mock
+  WARN COMPOSE_PROJECT_NAME=sentinelops-fresh: the executor and ops-reader are pinned to project 'sentinelops', so remediation/diagnostics report the target unavailable
+[exit code 0]
+
+$ uv run sentinelops dashboard   (non-interactive: prints the URL)
+
+Dashboard: http://127.0.0.1:8000/dashboard/   (local only; bound to 127.0.0.1)
+  It asks for the read-only API token: the SENTINEL_API_READ_TOKEN value in /tmp/claude-1000/-workspaces-Groot-002/91611681-be2f-4c80-ab1d-936e4de5fedf/scratchpad/fresh/sentinelops/.env (not printed here).
+[exit code 0]
+
+# independent dashboard/API access checks (token read from .env into a shell variable, never printed)
+$ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/dashboard/
+200
+$ curl -s http://127.0.0.1:8000/dashboard/ | grep -o "<title>.*</title>"
+<title>SentinelOps Dashboard (dev)</title>
+$ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/v1/system/status          # no token
+401
+$ curl -s -H "Authorization: Bearer $READ_TOKEN" http://127.0.0.1:8000/v1/system/status | jq .components.ai
+{"status": "ok", "selected": "mock:mock-investigator-v1", "paused_tasks": 0, "gateway": "mock"}
+$ docker compose ps --format "{{.Service}} {{.Publishers}}" (published ports)
+api 127.0.0.1:8000->8000/tcp, 8001/tcp
+demo-app 8000/tcp, 127.0.0.1:8001->8001/tcp

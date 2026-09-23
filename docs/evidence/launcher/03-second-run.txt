@@ -1,0 +1,21 @@
+$ uv run sentinelops        # second launch
+  ok   Python >= 3.12: 3.12.3
+  ok   Docker CLI: Docker version 29.8.0-1, build 88096ef00576baf72a9cb45caa45c0544c40e0a7
+  ok   Docker daemon running: server 29.8.0-1
+  ok   Docker Compose v2: 5.5.1
+Using existing configuration /tmp/claude-1000/-workspaces-Groot-002/91611681-be2f-4c80-ab1d-936e4de5fedf/scratchpad/fresh/sentinelops/.env (unchanged).
+Reusing saved configuration: AI mock / mock-investigator-v1
+SentinelOps is already running; checking health...
+All 11 services are healthy:
+  postgres ok, redis ok, api ok, demo-app ok, monitor ok, dispatcher ok, worker ok, ops-reader ok, executor ok, notifier ok, notify-sink ok
+AI mode: MOCK / DEMO - deterministic test model, NOT Claude. No Anthropic calls, no cost. Findings are not real AI analysis.
+  selected model: mock:mock-investigator-v1
+Remediation: human approval required (isolated demo only)
+Agent overall: degraded
+  executor: degraded
+
+Dashboard: http://127.0.0.1:8000/dashboard/   (local only; bound to 127.0.0.1)
+  It asks for the read-only API token: the SENTINEL_API_READ_TOKEN value in /tmp/claude-1000/-workspaces-Groot-002/91611681-be2f-4c80-ab1d-936e4de5fedf/scratchpad/fresh/sentinelops/.env (not printed here).
+Open the dashboard in your browser? [Y/n] n
+
+[exit code 0]

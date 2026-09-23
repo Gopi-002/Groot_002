@@ -100,6 +100,8 @@ services:
     environment:
       <<: *api_env
       SENTINEL_APPROVAL_SIGNING_KEY: ${SENTINEL_APPROVAL_SIGNING_KEY:?set SENTINEL_APPROVAL_SIGNING_KEY in .env}
+      # reported by /v1/system/status (the API itself makes no model calls)
+      SENTINEL_AI_GATEWAY: ${SENTINEL_AI_GATEWAY:-anthropic}
     ports:
       - "127.0.0.1:8000:8000"   # localhost only; dashboard shell has no auth yet
     networks: [backend, demo_net]

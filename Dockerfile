@@ -15,7 +15,10 @@ COPY app ./app
 COPY demo_application ./demo_application
 COPY migrations ./migrations
 COPY dashboard ./dashboard
-RUN useradd --system --uid 10001 --no-create-home sentinel \
+# Readable by the unprivileged runtime user whatever the host checkout's umask was
+# (a clone made with umask 077 would otherwise yield an unreadable /srv/app).
+RUN chmod -R a+rX /srv \
+    && useradd --system --uid 10001 --no-create-home sentinel \
     && mkdir -p /var/lib/sentinel-secrets /var/lib/sentinel-executor /var/lib/demo-state \
     && chown 10001:10001 /var/lib/sentinel-secrets /var/lib/sentinel-executor /var/lib/demo-state \
     && chmod 700 /var/lib/sentinel-secrets /var/lib/sentinel-executor /var/lib/demo-state

@@ -1,0 +1,83 @@
+$ uv run sentinelops
+Welcome to SentinelOps: a bounded incident-response agent for ONE isolated
+demo application. This guided setup runs locally; nothing is deployed.
+
+Checking prerequisites...
+  ok   Python >= 3.12: 3.12.3
+  ok   Docker CLI: Docker version 29.8.0-1, build 88096ef00576baf72a9cb45caa45c0544c40e0a7
+  ok   Docker daemon running: server 29.8.0-1
+  ok   Docker Compose v2: 5.5.1
+No local configuration found: creating .env from .env.example.
+  generated 9 fresh random secrets (not shown)
+  DOCKER_GID=990 (group of /var/run/docker.sock)
+  saved /tmp/claude-1000/-workspaces-Groot-002/91611681-be2f-4c80-ab1d-936e4de5fedf/scratchpad/fresh/sentinelops/.env (mode 0600; ignored by Git)
+
+Remediation (isolated demo app only; the deterministic policy still decides):
+  default: SentinelOps PROPOSES a restart and a human approves it via the API.
+Allow AUTONOMOUS restarts of the isolated demo app without approval? [y/N] 
+  human approval required for restarts
+Building the SentinelOps image (first run only; a few minutes)...
+[... docker compose build progress output elided: 5112 lines ...]
+Starting PostgreSQL and Redis...
+Applying database migrations...
+  database schema is at the latest migration
+
+AI configuration
+  1. Anthropic API key (real Claude; you choose the model)
+  2. Skip: MOCK / DEMO mode (deterministic test model, NOT Claude, no cost)
+  Note: A Claude subscription (Pro/Max/Team/Enterprise) alone does NOT give this app API access: SentinelOps uses an Anthropic API key from the Claude Console, billed pay-as-you-go and separately from any subscription (docs/auth-decision.md).
+Selection [1-2] (default 2): 1
+
+Opening the SentinelOps onboarding tool. Choose option 2 (Anthropic API key).
+Your key is typed into a HIDDEN prompt, checked with a free model-list call
+(no tokens used) and stored only in the ai_secrets Docker volume.
+[+] run 1/1
+ ✔ Container sentinelops-fresh-postgres-1 Running                           0.0s
+[+] run 0/1
+ ⠙ Container sentinelops-fresh-postgres-1 Waiting                           0.1s
+[+] run 0/1
+ ⠹ Container sentinelops-fresh-postgres-1 Waiting                           0.2s
+[+] run 0/1
+ ⠸ Container sentinelops-fresh-postgres-1 Waiting                           0.3s
+[+] run 0/1
+ ⠼ Container sentinelops-fresh-postgres-1 Waiting                           0.4s
+[+] run 0/1
+ ⠴ Container sentinelops-fresh-postgres-1 Waiting                           0.5s
+[+] run 1/1
+ ✔ Container sentinelops-fresh-postgres-1 Healthy                           0.5s
+[+] run 1/1
+ ✔ Container sentinelops-fresh-postgres-1 Healthy                           0.5s
+Container sentinelops-fresh-migrate-1 Waiting 
+Container sentinelops-fresh-migrate-1 Exited 
+Container sentinelops-fresh-onboard-run-1d2d09b7c13f Creating 
+Container sentinelops-fresh-onboard-run-1d2d09b7c13f Created 
+Welcome to SentinelOps
+
+Choose authentication:
+1. Claude Subscription  [unavailable]
+2. Anthropic API Key
+3. Exit
+Selection [1-3]: 2
+Billing: Anthropic API usage is billed pay-as-you-go to the Claude Console account that owns the key. It is separate from, and not covered by, any Claude subscription (Pro/Max/Team/Enterprise). Set spend limits in the Console.
+Anthropic API key (input hidden): 
+Rejected: API key has an invalid format.
+Anthropic API key (input hidden): 
+Authentication failed (authentication_failed). The key was NOT saved.
+
+The Claude API was not configured (no verified key or no model selected).
+Continue in MOCK / DEMO mode instead? [Y/n] 
+Selected mock-investigator-v1. AI mode: MOCK / DEMO - deterministic test model, NOT Claude. No Anthropic calls, no cost. Findings are not real AI analysis.
+Starting SentinelOps (existing containers are reused; nothing is duplicated)...
+All 11 services are healthy:
+  postgres ok, redis ok, api ok, demo-app ok, monitor ok, dispatcher ok, worker ok, ops-reader ok, executor ok, notifier ok, notify-sink ok
+AI mode: Claude API (Anthropic API key); selected mock:mock-investigator-v1; status ok
+  API usage is billed to your Claude Console account.
+Remediation: human approval required (isolated demo only)
+Agent overall: degraded
+  executor: degraded
+
+Dashboard: http://127.0.0.1:8000/dashboard/   (local only; bound to 127.0.0.1)
+  It asks for the read-only API token: the SENTINEL_API_READ_TOKEN value in /tmp/claude-1000/-workspaces-Groot-002/91611681-be2f-4c80-ab1d-936e4de5fedf/scratchpad/fresh/sentinelops/.env (not printed here).
+Open the dashboard in your browser? [Y/n] n
+
+[exit code 0]

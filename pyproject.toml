@@ -17,6 +17,17 @@ dependencies = [
     "anthropic>=1.8,<2",
 ]
 
+[project.scripts]
+# One-command launcher (app/launcher.py): `uv run sentinelops`
+sentinelops = "app.launcher:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.3",
@@ -25,7 +36,9 @@ dev = [
 ]
 
 [tool.uv]
-package = false
+# installable so `uv sync` puts the `sentinelops` command in .venv/bin (the Docker
+# image still uses `uv sync --no-install-project`)
+package = true
 
 [tool.ruff]
 line-length = 100
@@ -41,6 +54,8 @@ ignore = ["S101"]
 # operator harness: fixed SQL against the local stack via psql, local HTTP only
 "scripts/soak.py" = ["S310", "S603", "S607", "S608", "E501"]
 "scripts/agent_effectiveness.py" = ["S310", "S603", "S607", "S608", "E501"]
+# host launcher: runs fixed docker/docker compose argv lists (no shell), loopback HTTP only
+"app/launcher.py" = ["S603", "S607"]
 # imports shared pytest fixtures from test_remediation (fixture args shadow the imports)
 "tests/integration/test_approval_api.py" = ["S105", "S106", "S310", "S603", "S607", "S608", "F811"]
 "tests/integration/test_phase6_gaps.py" = ["S105", "S106", "S310", "S311", "S603", "S607", "S608", "F811"]

@@ -1,0 +1,47 @@
+$ uv run sentinelops
+Welcome to SentinelOps: a bounded incident-response agent for ONE isolated
+demo application. This guided setup runs locally; nothing is deployed.
+
+Checking prerequisites...
+  ok   Python >= 3.12: 3.12.3
+  ok   Docker CLI: Docker version 29.8.0-1, build 88096ef00576baf72a9cb45caa45c0544c40e0a7
+  ok   Docker daemon running: server 29.8.0-1
+  ok   Docker Compose v2: 5.5.1
+No local configuration found: creating .env from .env.example.
+  generated 9 fresh random secrets (not shown)
+  DOCKER_GID=990 (group of /var/run/docker.sock)
+  saved /tmp/claude-1000/-workspaces-Groot-002/91611681-be2f-4c80-ab1d-936e4de5fedf/scratchpad/fresh/sentinelops/.env (mode 0600; ignored by Git)
+
+Remediation (isolated demo app only; the deterministic policy still decides):
+  default: SentinelOps PROPOSES a restart and a human approves it via the API.
+Allow AUTONOMOUS restarts of the isolated demo app without approval? [y/N] 
+  human approval required for restarts
+Building the SentinelOps image (first run only; a few minutes)...
+Starting PostgreSQL and Redis...
+Applying database migrations...
+ERROR: migrations failed:
+ine 488, in _call_with_frames_removed
+  File "/srv/migrations/env.py", line 41, in <module>
+    run_migrations_online()
+  File "/srv/migrations/env.py", line 24, in run_migrations_online
+    engine = create_engine(_url(), poolclass=pool.NullPool)
+                           ^^^^^^
+  File "/srv/migrations/env.py", line 20, in _url
+    return get_settings().database_url
+           ^^^^^^^^^^^^^^
+  File "/srv/app/config.py", line 318, in get_settings
+    return Settings()  # populated from environment
+           ^^^^^^^^^^
+  File "/opt/venv/lib/python3.12/site-packages/pydantic_settings/main.py", line 262, in __init__
+    super().__init__(**__pydantic_self__.__class__._settings_build_values(sources, init_kwargs))
+  File "/opt/venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/srv/app/config.py", line 212, in _phase5_invariants
+    from app.notifications.channels import InvalidWebhookUrl, validate_webhook_url
+ModuleNotFoundError: No module named 'app.notifications.channels'
+
+
+  Fix: see `sentinelops logs postgres`
+
+[exit code 1]

@@ -30,6 +30,69 @@ fault-injection matrix: [`docs/phase6-acceptance.md`](docs/phase6-acceptance.md)
 [`docs/threat-model.md`](docs/threat-model.md). Sample incident report (mock model, TEST/DEMO ONLY):
 [`docs/examples/sample-incident-report.md`](docs/examples/sample-incident-report.md).
 
+## Quick start: one command
+
+**You need:** Docker with Compose v2 (running), and [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
+(uv installs Python 3.12 for you if needed).
+
+```bash
+git clone https://github.com/Gopi-002/Groot_002.git && cd Groot_002
+uv sync                 # installs the project, including the `sentinelops` command, into .venv
+uv run sentinelops      # first run: guided setup; every later run: start + status
+```
+
+### First run: guided setup
+`uv run sentinelops` walks you through:
+1. **Prerequisite checks.** Docker CLI, a running daemon, Compose v2 and Python 3.12+, each with a fix if one is missing.
+2. **Configuration.** It creates `.env` from `.env.example` (mode 0600, gitignored) with **freshly generated secrets**. It never shows them and never overwrites existing values without asking.
+3. **Remediation mode.** The default is the isolated demo app, with **human approval** for each restart. Autonomous demo restarts are enabled only if you explicitly answer `y`.
+4. **Build, infrastructure and migrations.** It validates the compose file, builds the image (first run only), starts PostgreSQL and Redis, and applies the migrations.
+5. **AI configuration** (the existing onboarding tool). Choose one:
+   - **1. Anthropic API key.** Your key is typed into a **hidden** prompt, verified with a free model-list call (no tokens used) and stored only in the `ai_secrets` Docker volume, never in `.env`, logs or Git. Next, pick a model from the list the API returns for your key.
+     **A Claude subscription (Pro/Max/Team/Enterprise) alone does not give this app API access.** API usage is billed separately, pay-as-you-go, in the Claude Console ([why](docs/auth-decision.md)).
+   - **2. Skip: mock / demo mode.** A deterministic test model that is clearly labelled **NOT Claude**, with no calls and no cost.
+6. **Start and dashboard.** It starts all 11 services, waits until every health check passes, shows the AI mode and agent health, and prints the dashboard URL (`http://127.0.0.1:8000/dashboard/`, local only). It then offers to open the URL in your browser. The dashboard asks for the read-only API token, which is the `SENTINEL_API_READ_TOKEN` value in `.env`.
+
+### Later runs
+`uv run sentinelops` reuses `.env`, the stored key and the selected model, with no onboarding. It then:
+- starts any stopped services (never duplicates);
+- waits for health;
+- shows status and the dashboard URL.
+
+It makes no AI call just to check status. Onboarding runs again only if the key or model is missing, or if you ask with `sentinelops setup`.
+
+### Commands
+| Command | What it does |
+|---|---|
+| `sentinelops` | First run: setup and then start. Later runs: start and status |
+| `sentinelops setup` | Re-run guided setup: change the remediation mode, reconfigure the key or model |
+| `sentinelops start` / `stop` | Start and wait for health / stop (containers and data are kept) |
+| `sentinelops status` | Services, AI mode (MOCK vs Claude API), agent health and the dashboard URL (no AI call) |
+| `sentinelops models` | List the models available to your key and change the selection |
+| `sentinelops logs [service] [-f]` | Recent logs |
+| `sentinelops dashboard` | Print the local dashboard URL and offer to open it |
+| `sentinelops doctor` | Diagnose prerequisites, `.env`, the Docker socket group, the compose file and health |
+
+Use `uv run sentinelops …` from the repository. **Optional:** to put a bare `sentinelops` command on
+your `PATH`, run `uv tool install --editable .` once (remove it with `uv tool uninstall sentinelops`).
+It then works from any directory; set `SENTINELOPS_HOME=/path/to/Groot_002` if you move the checkout.
+
+The launcher only drives the existing Compose services and onboarding tool. It never:
+- deploys anything;
+- publishes a port beyond `127.0.0.1`;
+- changes the policy or the executor allowlist;
+- enables autonomy without your `y`;
+- makes a paid model call.
+
+It manages the standard `docker-compose.yml` stack (it ignores a `COMPOSE_FILE` override such as the test-ports file).
+
+---
+
+# Advanced: manual setup, operations and maintenance
+
+Everything below is the manual path that the launcher automates, plus operations, tests, backups and
+troubleshooting. All of these commands keep working.
+
 ## Requirements
 - Docker Engine with Compose v2 (tested: Docker 29.8, Compose 5.5.1)
 - For running tests on the host: Python 3.12 and [`uv`](https://docs.astral.sh/uv/) (tested: uv 0.12.17)

@@ -1,0 +1,34 @@
+$ uv run sentinelops models
+AI mode: MOCK / DEMO - deterministic test model, NOT Claude. No Anthropic calls, no cost. Findings are not real AI analysis. Run `sentinelops setup` to configure a Claude API key.
+Models available to this key (from the provider's model-list endpoint):
+  1. mock-investigator-v1  -  Deterministic mock investigator (TEST/DEMO ONLY - not Claude)  (100,000 ctx, 8,000 max out)
+Current selection: mock-investigator-v1 (mock)
+Select a model [1-1]: 1
+Selected model: mock-investigator-v1 (auth mode: mock).
+New investigations use this model; investigations already started keep the model they were pinned to.
+
+[exit code 0]
+
+$ uv run sentinelops stop
+SentinelOps stopped (containers, data and configuration kept).
+[exit code 0]
+$ uv run sentinelops status
+  notifier     exited
+  notify-sink  exited
+Not healthy: postgres, redis, api, demo-app, monitor, dispatcher, worker, ops-reader, executor, notifier, notify-sink
+
+$ uv run sentinelops start
+Starting SentinelOps (existing containers are reused; nothing is duplicated)...
+All 11 services are healthy:
+  postgres ok, redis ok, api ok, demo-app ok, monitor ok, dispatcher ok, worker ok, ops-reader ok, executor ok, notifier ok, notify-sink ok
+AI mode: MOCK / DEMO - deterministic test model, NOT Claude. No Anthropic calls, no cost. Findings are not real AI analysis.
+  selected model: mock:mock-investigator-v1
+Remediation: human approval required (isolated demo only)
+Agent overall: degraded
+  executor: degraded
+
+Dashboard: http://127.0.0.1:8000/dashboard/   (local only; bound to 127.0.0.1)
+  It asks for the read-only API token: the SENTINEL_API_READ_TOKEN value in /tmp/claude-1000/-workspaces-Groot-002/91611681-be2f-4c80-ab1d-936e4de5fedf/scratchpad/fresh/sentinelops/.env (not printed here).
+Open the dashboard in your browser? [Y/n] n
+
+[exit code 0]
